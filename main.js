@@ -1,6 +1,8 @@
+require('dotenv').config();
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 const fetch = require('node-fetch');
+
 const {
   BOT_TOKEN,
   WEBHOOK_URL,
@@ -18,7 +20,7 @@ app.use(express.json());
 
 function buildUpgradeKeyboard() {
   return Markup.inlineKeyboard(
-    Object.entries(ITEMS).map(([id, item]) => [ Markup.button.callback(item.name, id) ])
+    Object.entries(ITEMS).map(([id, item]) => [Markup.button.callback(item.name, id)])
   );
 }
 
@@ -87,10 +89,19 @@ bot.on('successful_payment', async ctx => {
         upgradeId: itemId
       })
     });
-    
-    const result = await response.json();
+
+    // Read raw text and parse JSON safely
+    const text = await response.text();
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      console.error('Appwrite function returned non-JSON:', text);
+      throw new Error(`Invalid function response: ${text}`);
+    }
+
     if (result.error) throw new Error(result.message);
-    
+
     await ctx.reply(
       `Purchased successfully!\n\n` +
       `Your mining power has been permanently upgraded to ${result.mining_power}x.\n` +
