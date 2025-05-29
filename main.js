@@ -83,13 +83,16 @@ bot.on('successful_payment', async ctx => {
   }
   
   const upgradeValue = UPGRADE_VALUES[itemId];
+  const shortChargeId = payment.telegram_payment_charge_id.substring(0, 8);
   
   try {
-    // Find user in Appwrite
+    // FIXED: Use proper query format without body for GET requests
     const result = await databases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_ID,
-      [Query.equal('telegram_id', String(userId))]
+      [
+        Query.equal('telegram_id', userId.toString())
+      ]
     );
 
     if (result.total === 0) {
@@ -121,7 +124,6 @@ bot.on('successful_payment', async ctx => {
 
     // Admin notification
     const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
-    const shortChargeId = payment.telegram_payment_charge_id.substring(0, 8);
     
     for (const adminId of ADMIN_CHAT_IDS) {
       try {
@@ -143,7 +145,6 @@ bot.on('successful_payment', async ctx => {
   } catch (err) {
     console.error('Purchase processing error:', err);
     
-    const shortChargeId = payment.telegram_payment_charge_id.substring(0, 8);
     await ctx.reply(MESSAGES.purchase_error(`PAY-${shortChargeId}`));
     
     // Critical error notification
