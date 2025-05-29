@@ -32,18 +32,33 @@ bot.command('upgrade', ctx => {
 bot.on('callback_query', async ctx => {
   const itemId = ctx.callbackQuery.data;
   const item = ITEMS[itemId];
+  const userId = ctx.from.id;
+
   if (!item) {
     return ctx.answerCbQuery('Invalid option', { show_alert: true });
   }
 
+  // Grant first "basic" upgrade for free
+  if (itemId === 'basic' && !STATS.purchases[userId]) {
+    // Record free upgrade
+    STATS.purchases[userId] = 1;
+    await ctx.answerCbQuery();
+    await ctx.reply(
+      `Congratulations! You've received the ${item.name} for free as your first upgrade.`
+    );
+    return;
+  }
+
   await ctx.answerCbQuery();
+
   try {
+    // Send invoice for paid upgrades
     await ctx.replyWithInvoice({
       chat_id: ctx.chat.id,
       title: item.name,
       description: item.description,
       payload: itemId,
-      provider_token: '',
+      provider_token: PROVIDER_TOKEN,
       currency: 'XTR',
       prices: [{ label: item.name, amount: item.price }],
       start_parameter: 'start',
@@ -56,7 +71,10 @@ bot.on('callback_query', async ctx => {
 
 bot.on('pre_checkout_query', ctx => {
   const payload = ctx.preCheckoutQuery.invoice_payload;
-  ctx.answerPreCheckoutQuery(!!ITEMS[payload], ITEMS[payload] ? undefined : 'Invalid payload');
+  ctx.answerPreCheckoutQuery(
+    !!ITEMS[payload],
+    ITEMS[payload] ? undefined : 'Invalid payload'
+  );
 });
 
 bot.on('successful_payment', async ctx => {
@@ -68,11 +86,11 @@ bot.on('successful_payment', async ctx => {
   STATS.purchases[userId] = (STATS.purchases[userId] || 0) + 1;
   console.log(`Purchase by ${userId}: ${itemId}`);
 
-await ctx.reply(
-  `Purchased successfully!\n\n` +
-  `Your mining will be upgraded according to your purchase permanently.\n` +
-  `If your Mining Power doesn’t update, contact support.`
-);
+  await ctx.reply(
+    `Purchased successfully!\n\n` +
+    `Your mining will be upgraded according to your purchase permanently.\n` +
+    `If your Mining Power doesn’t update, contact support.`
+  );
 
   const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
   for (const adminId of ADMIN_CHAT_IDS) {
