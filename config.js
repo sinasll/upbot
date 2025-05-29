@@ -2,21 +2,44 @@ require('dotenv').config();
 
 module.exports = {
   BOT_TOKEN: process.env.BOT_TOKEN,
-  WEBHOOK_URL: process.env.WEBHOOK_URL,
   PROVIDER_TOKEN: process.env.PROVIDER_TOKEN,
+  WEBHOOK_URL: process.env.WEBHOOK_URL,
   ITEMS: {
-    basic:       { name: '+0.2× Mining Power — 1 ⭐️',    price: 1,   description: 'Upgrade your mining power by +0.2×', powerIncrement: 0.2 },
-    advanced:    { name: '+0.4× Mining Power — 100 ⭐️',  price: 100, description: 'Upgrade your mining power by +0.4×', powerIncrement: 0.4 },
-    recommended: { name: '+0.6× Mining Power — 150 ⭐️',  price: 150, description: 'Upgrade your mining power by +0.6×', powerIncrement: 0.6 },
-    ultra:       { name: '+0.8× Mining Power — 200 ⭐️',  price: 200, description: 'Upgrade your mining power by +0.8×', powerIncrement: 0.8 },
-    ultimate:    { name: '+1.0× Mining Power — 250 ⭐️',  price: 250, description: 'Upgrade your mining power by +1.0×', powerIncrement: 1.0 }
+    basic: { 
+      name: '+0.2× Mining Power — 1 ⭐️', 
+      price: 1, 
+      description: 'Upgrade your mining power by +0.2×',
+      bonus: 0.2
+    },
+    advanced: { 
+      name: '+0.4× Mining Power — 100 ⭐️', 
+      price: 100, 
+      description: 'Upgrade your mining power by +0.4×',
+      bonus: 0.4
+    },
+    recommended: { 
+      name: '+0.6× Mining Power — 150 ⭐️', 
+      price: 150, 
+      description: 'Upgrade your mining power by +0.6×',
+      bonus: 0.6
+    },
+    ultra: { 
+      name: '+0.8× Mining Power — 200 ⭐️', 
+      price: 200, 
+      description: 'Upgrade your mining power by +0.8×',
+      bonus: 0.8
+    },
+    ultimate: { 
+      name: '+1.0× Mining Power — 250 ⭐️', 
+      price: 250, 
+      description: 'Upgrade your mining power by +1.0×',
+      bonus: 1.0
+    }
   },
   MESSAGES: {
     welcome: `Welcome to the $BLACK Upgrade Center\n\nGet a permanent boost using\nTelegram stars ⭐️ and mine more $BLACK.\n\nChoose an upgrade`
   },
   ADMIN_CHAT_IDS: process.env.ADMIN_CHAT_IDS?.split(',').map(id => parseInt(id, 10)) || [],
-
-  // Appwrite settings
   APPWRITE_ENDPOINT: process.env.APPWRITE_ENDPOINT,
   APPWRITE_PROJECT_ID: process.env.APPWRITE_PROJECT_ID,
   APPWRITE_API_KEY: process.env.APPWRITE_API_KEY,
