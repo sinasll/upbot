@@ -78,11 +78,13 @@ bot.on('successful_payment', async ctx => {
   STATS.purchases[userId] = (STATS.purchases[userId] || 0) + 1;
   console.log(`Purchase by ${userId}: ${itemId}`);
 
-  // Apply upgrade via Appwrite
   try {
     const response = await fetch(APPWRITE_FUNCTION_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Appwrite-Key': process.env.APPWRITE_API_KEY
+      },
       body: JSON.stringify({
         action: 'apply_upgrade',
         telegramId: userId.toString(),
@@ -90,27 +92,38 @@ bot.on('successful_payment', async ctx => {
       })
     });
 
-    // Read raw text and parse JSON safely
-    const text = await response.text();
+    // First get response as text
+    const responseText = await response.text();
+    
+    // Then try to parse as JSON
     let result;
     try {
-      result = JSON.parse(text);
+      result = JSON.parse(responseText);
     } catch (e) {
-      console.error('Appwrite function returned non-JSON:', text);
-      throw new Error(`Invalid function response: ${text}`);
+      // If it's not JSON, create error response
+      console.error('Failed to parse JSON:', responseText);
+      result = {
+        error: true,
+        message: `Invalid response from server: ${responseText.substring(0, 50)}`
+      };
     }
 
-    if (result.error) throw new Error(result.message);
+    // Handle Appwrite function errors
+    if (result.error) {
+      throw new Error(result.message || 'Unknown Appwrite error');
+    }
 
+    // Success case
     await ctx.reply(
-      `Purchased successfully!\n\n` +
+      `✅ Purchased successfully!\n\n` +
       `Your mining power has been permanently upgraded to ${result.mining_power}x.\n` +
-      `If your Mining Power doesn’t update, contact support.`
+      `If your Mining Power doesn't update, contact support.`
     );
+    
   } catch (err) {
     console.error('Upgrade error:', err);
     await ctx.reply(
-      `Payment succeeded but upgrade failed: ${err.message}\n` +
+      `⚠️ Payment succeeded but upgrade failed: ${err.message}\n` +
       `Please contact support with transaction ID: ${payment.telegram_payment_charge_id}`
     );
   }
