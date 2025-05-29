@@ -4,7 +4,7 @@ module.exports = {
   BOT_TOKEN: process.env.BOT_TOKEN,
   WEBHOOK_URL: process.env.WEBHOOK_URL,
   ITEMS: {
-    basic: { name: '+0.2× Mining Power — 50 ⭐️', price: 50, description: 'Upgrade your mining power by +0.2×' },
+    basic: { name: '+0.2× Mining Power — 1 ⭐️', price: 1, description: 'Upgrade your mining power by +0.2×' },
     advanced: { name: '+0.4× Mining Power — 100 ⭐️', price: 100, description: 'Upgrade your mining power by +0.4×' },
     recommended: { name: '+0.6× Mining Power — 150 ⭐️', price: 150, description: 'Upgrade your mining power by +0.6×' },
     ultra: { name: '+0.8× Mining Power — 200 ⭐️', price: 200, description: 'Upgrade your mining power by +0.8×' },
