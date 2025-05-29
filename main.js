@@ -77,14 +77,16 @@ bot.on('successful_payment', async ctx => {
   const userId = ctx.from.id;
   const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
 
-  // Fetch user document (FIXED APPRWRITE CALL)
+  // CORRECTED Appwrite call
   let userDoc;
   try {
     const found = await databases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_ID,
-      [Query.equal('telegram_id', String(userId))],
-      1
+      [
+        Query.equal('telegram_id', String(userId)),
+        Query.limit(1)
+      ]
     );
 
     if (found.total > 0) userDoc = found.documents[0];
@@ -94,6 +96,7 @@ bot.on('successful_payment', async ctx => {
     return ctx.reply('Database error. Please contact support.');
   }
 
+  // Update mining power
   if (userDoc) {
     try {
       const newPower = (userDoc.mining_power || 1) + item.powerIncrement;
