@@ -1,23 +1,37 @@
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
+const { Client, Databases, Query } = require('node-appwrite');
 const {
   BOT_TOKEN,
-  PROVIDER_TOKEN,
   WEBHOOK_URL,
   ITEMS,
   MESSAGES,
-  ADMIN_CHAT_IDS
+  ADMIN_CHAT_IDS,
+  APPWRITE_ENDPOINT,
+  APPWRITE_PROJECT_ID,
+  APPWRITE_API_KEY,
+  APPWRITE_DATABASE_ID,
+  APPWRITE_COLLECTION_ID
 } = require('./config');
 
 const bot = new Telegraf(BOT_TOKEN);
 const app = express();
-const STATS = { purchases: {} };
-
 app.use(express.json());
 
+// Initialize Appwrite client
+const awClient = new Client()
+  .setEndpoint(APPWRITE_ENDPOINT)
+  .setProject(APPWRITE_PROJECT_ID)
+  .setKey(APPWRITE_API_KEY);
+
+const databases = new Databases(awClient);
+
+// Build the inline keyboard for upgrades
 function buildUpgradeKeyboard() {
   return Markup.inlineKeyboard(
-    Object.entries(ITEMS).map(([id, item]) => [ Markup.button.callback(item.name, id) ])
+    Object.entries(ITEMS).map(([id, item]) => [
+      Markup.button.callback(item.name, id)
+    ])
   );
 }
 
@@ -43,7 +57,7 @@ bot.on('callback_query', async ctx => {
       title: item.name,
       description: item.description,
       payload: itemId,
-      provider_token: '',
+      provider_token: PROVIDER_TOKEN,
       currency: 'XTR',
       prices: [{ label: item.name, amount: item.price }],
       start_parameter: 'start',
@@ -64,16 +78,45 @@ bot.on('successful_payment', async ctx => {
   const itemId = payment.invoice_payload;
   const item = ITEMS[itemId];
   const userId = ctx.from.id;
+  const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
 
+  // 1) Update mining_power in Appwrite
+  try {
+    // Find the user document by telegram_id
+    const found = await databases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      APPWRITE_COLLECTION_ID,
+      [
+        Query.equal('telegram_id', String(userId)),
+        Query.limit(1)
+      ]
+    );
+
+    if (found.total > 0) {
+      const userDoc = found.documents[0];
+      const newPower = (userDoc.mining_power || 1) + item.powerIncrement;
+
+      await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        APPWRITE_COLLECTION_ID,
+        userDoc.$id,
+        { mining_power: newPower }
+      );
+    }
+  } catch (err) {
+    console.error('Appwrite update error:', err);
+    // (Optional) notify the user/admin of a sync failure
+  }
+
+  // 2) Acknowledge the user
   STATS.purchases[userId] = (STATS.purchases[userId] || 0) + 1;
-  console.log(`Purchase by ${userId}: ${itemId}`);
-
   await ctx.reply(
     `🎉 Purchased "${item.name}" successfully!\n\n` +
-    `If your Mining Power doesn’t update within 4 hours, contact support.`
+    `Your mining power has been increased by +${item.powerIncrement}×.\n` +
+    `If you don’t see the change in-game within a few minutes, please contact support.`
   );
 
-  const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
+  // 3) Notify admins
   for (const adminId of ADMIN_CHAT_IDS) {
     await bot.telegram.sendMessage(
       adminId,
