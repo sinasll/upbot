@@ -1,15 +1,22 @@
 require('dotenv').config();
 
+const ITEMS = {
+  basic: { name: '+0.2× Mining Power — 1 ⭐️', price: 1, description: 'Upgrade your mining power by +0.2×' },
+  advanced: { name: '+0.4× Mining Power — 100 ⭐️', price: 100, description: 'Upgrade your mining power by +0.4×' },
+  recommended: { name: '+0.6× Mining Power — 150 ⭐️', price: 150, description: 'Upgrade your mining power by +0.6×' },
+  ultra: { name: '+0.8× Mining Power — 200 ⭐️', price: 200, description: 'Upgrade your mining power by +0.8×' },
+  ultimate: { name: '+1.0× Mining Power — 250 ⭐️', price: 250, description: 'Upgrade your mining power by +1.0×' }
+};
+
+const ITEM_TITLES_FOR_ADMINS = Object.fromEntries(
+  Object.entries(ITEMS).map(([key, item]) => [key, item.name.split(' — ')[0]])
+);
+
 module.exports = {
   BOT_TOKEN: process.env.BOT_TOKEN,
   WEBHOOK_URL: process.env.WEBHOOK_URL,
-  ITEMS: {
-    basic: { name: '+0.2× Mining Power — 1 ⭐️', price: 1, description: 'Upgrade your mining power by +0.2×' },
-    advanced: { name: '+0.4× Mining Power — 100 ⭐️', price: 100, description: 'Upgrade your mining power by +0.4×' },
-    recommended: { name: '+0.6× Mining Power — 150 ⭐️', price: 150, description: 'Upgrade your mining power by +0.6×' },
-    ultra: { name: '+0.8× Mining Power — 200 ⭐️', price: 200, description: 'Upgrade your mining power by +0.8×' },
-    ultimate: { name: '+1.0× Mining Power — 250 ⭐️', price: 250, description: 'Upgrade your mining power by +1.0×' }
-  },
+  ITEMS,
+  ITEM_TITLES_FOR_ADMINS,
   MESSAGES: {
     welcome: `Welcome to the $BLACK Upgrade Center\n\nGet a permanent boost using\nTelegram stars ⭐️ and mine more $BLACK.\n\nChoose an upgrade`
   },

@@ -81,7 +81,7 @@ await ctx.reply(
       `*New Purchase*\n` +
       `User: ${username} (\`${userId}\`)\n` +
       `Pack: *${item.name}*\n` +
-      `Cost: \`${item.price} ⭐️\`\n` +
+      `Cost: \`${item.price}\`\n` +
       `Charge ID: \`${payment.telegram_payment_charge_id}\``,
       { parse_mode: 'Markdown' }
     );
