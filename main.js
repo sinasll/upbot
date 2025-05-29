@@ -1,4 +1,3 @@
-// bot.js
 require('dotenv').config();
 const express   = require('express');
 const { Telegraf, Markup } = require('telegraf');
@@ -89,14 +88,12 @@ bot.on('successful_payment', async ctx => {
   // 1) Fetch the user document by telegram_id (limit=1)
   let userDoc;
   try {
-    const found = await databases.listDocuments(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_COLLECTION_ID,
-      [
-        Query.equal('telegram_id', String(userId))
-      ],
-      1 // <-- limit here, not inside the queries array
-    );
+ const found = await databases.listDocuments({
+  databaseId:   APPWRITE_DATABASE_ID,
+  collectionId: APPWRITE_COLLECTION_ID,
+  queries:      [ Query.equal('telegram_id', String(userId)) ],
+  limit:        1,
+});
 
     if (found.total === 0) {
       console.warn(`User ${userId} not found in DB`);
