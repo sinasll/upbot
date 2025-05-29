@@ -1,0 +1,15 @@
+{
+  "name": "telegram-upgrade-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot with inlined Appwrite logic to apply mining power upgrades",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2",
+    "telegraf": "^4.12.3",
+    "node-appwrite": "^11.0.0"
+  }
+}
