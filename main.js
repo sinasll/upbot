@@ -57,7 +57,7 @@ bot.on('callback_query', async ctx => {
       title: item.name,
       description: item.description,
       payload: itemId,
-      provider_token: PROVIDER_TOKEN,
+      provider_token: '',
       currency: 'XTR',
       prices: [{ label: item.name, amount: item.price }],
       start_parameter: 'start',
