@@ -1,12 +1,14 @@
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
+const fetch = require('node-fetch');
 const {
   BOT_TOKEN,
   PROVIDER_TOKEN,
   WEBHOOK_URL,
   ITEMS,
   MESSAGES,
-  ADMIN_CHAT_IDS
+  ADMIN_CHAT_IDS,
+  APPWRITE_FUNCTION_URL
 } = require('./config');
 
 const bot = new Telegraf(BOT_TOKEN);
@@ -40,13 +42,32 @@ bot.on('callback_query', async ctx => {
 
   // Grant first "basic" upgrade for free
   if (itemId === 'basic' && !STATS.purchases[userId]) {
-    // Record free upgrade
-    STATS.purchases[userId] = 1;
-    await ctx.answerCbQuery();
-    await ctx.reply(
-      `Congratulations! You've received the ${item.name} for free as your first upgrade.`
-    );
-    return;
+    // Apply upgrade via Appwrite
+    try {
+      const response = await fetch(APPWRITE_FUNCTION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'apply_upgrade',
+          telegramId: userId.toString(),
+          upgradeId: itemId
+        })
+      });
+      
+      const result = await response.json();
+      if (result.error) throw new Error(result.message);
+      
+      // Record free upgrade
+      STATS.purchases[userId] = 1;
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        `Congratulations! You've received the ${item.name} for free as your first upgrade.`
+      );
+      return;
+    } catch (err) {
+      console.error('Upgrade error:', err);
+      return ctx.answerCbQuery('Failed to apply upgrade', { show_alert: true });
+    }
   }
 
   await ctx.answerCbQuery();
@@ -86,11 +107,33 @@ bot.on('successful_payment', async ctx => {
   STATS.purchases[userId] = (STATS.purchases[userId] || 0) + 1;
   console.log(`Purchase by ${userId}: ${itemId}`);
 
-  await ctx.reply(
-    `Purchased successfully!\n\n` +
-    `Your mining will be upgraded according to your purchase permanently.\n` +
-    `If your Mining Power doesn’t update, contact support.`
-  );
+  // Apply upgrade via Appwrite
+  try {
+    const response = await fetch(APPWRITE_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'apply_upgrade',
+        telegramId: userId.toString(),
+        upgradeId: itemId
+      })
+    });
+    
+    const result = await response.json();
+    if (result.error) throw new Error(result.message);
+    
+    await ctx.reply(
+      `Purchased successfully!\n\n` +
+      `Your mining power has been permanently upgraded to ${result.mining_power}x.\n` +
+      `If your Mining Power doesn’t update, contact support.`
+    );
+  } catch (err) {
+    console.error('Upgrade error:', err);
+    await ctx.reply(
+      `Payment succeeded but upgrade failed: ${err.message}\n` +
+      `Please contact support with transaction ID: ${payment.telegram_payment_charge_id}`
+    );
+  }
 
   const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
   for (const adminId of ADMIN_CHAT_IDS) {
