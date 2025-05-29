@@ -1,21 +1,23 @@
 require('dotenv').config();
 
 function requireEnv(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing environment variable: ${name}`);
-  return value;
+  const val = process.env[name];
+  if (!val) throw new Error(`Missing env var ${name}`);
+  return val;
 }
 
 module.exports = {
-  BOT_TOKEN: requireEnv('BOT_TOKEN'),
-  WEBHOOK_URL: requireEnv('WEBHOOK_URL'),
-  ADMIN_CHAT_IDS: (process.env.ADMIN_CHAT_IDS || '')
-    .split(',')
-    .filter(Boolean)
-    .map(Number),
-  APPWRITE_ENDPOINT: requireEnv('APPWRITE_ENDPOINT'),
-  APPWRITE_PROJECT_ID: requireEnv('APPWRITE_PROJECT_ID'),
-  APPWRITE_API_KEY: requireEnv('APPWRITE_API_KEY'),
+  BOT_TOKEN:        requireEnv('BOT_TOKEN'),
+  WEBHOOK_URL:      requireEnv('WEBHOOK_URL'),
+  PROVIDER_TOKEN:   process.env.PROVIDER_TOKEN || '',
+  ADMIN_CHAT_IDS:   (process.env.ADMIN_CHAT_IDS || '')
+                      .split(',')
+                      .filter(Boolean)
+                      .map(Number),
+
+  APPWRITE_ENDPOINT:    requireEnv('APPWRITE_ENDPOINT'),
+  APPWRITE_PROJECT_ID:  requireEnv('APPWRITE_PROJECT_ID'),
+  APPWRITE_API_KEY:     requireEnv('APPWRITE_API_KEY'),
   APPWRITE_DATABASE_ID: requireEnv('APPWRITE_DATABASE_ID'),
   APPWRITE_COLLECTION_ID: requireEnv('APPWRITE_COLLECTION_ID'),
 
@@ -53,6 +55,11 @@ module.exports = {
   },
 
   MESSAGES: {
-    welcome: `Welcome to the $BLACK Upgrade Center\n\nGet a permanent boost using\nTelegram stars ⭐️ and mine more $BLACK.\n\nChoose an upgrade`
+    welcome: `Welcome to the $BLACK Upgrade Center
+
+Get a permanent boost using
+Telegram stars ⭐️ and mine more $BLACK.
+
+Choose an upgrade`
   }
 };
