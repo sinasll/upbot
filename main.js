@@ -3,7 +3,6 @@ const { Telegraf, Markup } = require('telegraf');
 const fetch = require('node-fetch');
 const {
   BOT_TOKEN,
-  PROVIDER_TOKEN,
   WEBHOOK_URL,
   ITEMS,
   MESSAGES,
@@ -40,36 +39,6 @@ bot.on('callback_query', async ctx => {
     return ctx.answerCbQuery('Invalid option', { show_alert: true });
   }
 
-  // Grant first "basic" upgrade for free
-  if (itemId === 'basic' && !STATS.purchases[userId]) {
-    // Apply upgrade via Appwrite
-    try {
-      const response = await fetch(APPWRITE_FUNCTION_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'apply_upgrade',
-          telegramId: userId.toString(),
-          upgradeId: itemId
-        })
-      });
-      
-      const result = await response.json();
-      if (result.error) throw new Error(result.message);
-      
-      // Record free upgrade
-      STATS.purchases[userId] = 1;
-      await ctx.answerCbQuery();
-      await ctx.reply(
-        `Congratulations! You've received the ${item.name} for free as your first upgrade.`
-      );
-      return;
-    } catch (err) {
-      console.error('Upgrade error:', err);
-      return ctx.answerCbQuery('Failed to apply upgrade', { show_alert: true });
-    }
-  }
-
   await ctx.answerCbQuery();
 
   try {
@@ -79,7 +48,7 @@ bot.on('callback_query', async ctx => {
       title: item.name,
       description: item.description,
       payload: itemId,
-      provider_token: PROVIDER_TOKEN,
+      provider_token: '',
       currency: 'XTR',
       prices: [{ label: item.name, amount: item.price }],
       start_parameter: 'start',
