@@ -1,50 +1,40 @@
-require('dotenv').config();
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
-const { Client, Databases, Query } = require('node-appwrite');
 const {
   BOT_TOKEN,
-  WEBHOOK_URL,
   PROVIDER_TOKEN,
+  WEBHOOK_URL,
   ITEMS,
   MESSAGES,
-  ADMIN_CHAT_IDS,
-  APPWRITE_ENDPOINT,
-  APPWRITE_PROJECT_ID,
-  APPWRITE_API_KEY,
-  APPWRITE_DATABASE_ID,
-  APPWRITE_COLLECTION_ID
+  ADMIN_CHAT_IDS
 } = require('./config');
 
-const app = express();
-app.use(express.json());
-
 const bot = new Telegraf(BOT_TOKEN);
-const awClient = new Client()
-  .setEndpoint(APPWRITE_ENDPOINT)
-  .setProject(APPWRITE_PROJECT_ID)
-  .setKey(APPWRITE_API_KEY);
-const databases = new Databases(awClient);
+const app = express();
+const STATS = { purchases: {} };
+
+app.use(express.json());
 
 function buildUpgradeKeyboard() {
   return Markup.inlineKeyboard(
-    Object.entries(ITEMS).map(([id, item]) =>
-      Markup.button.callback(item.name, id)
-    )
+    Object.entries(ITEMS).map(([id, item]) => [ Markup.button.callback(item.name, id) ])
   );
 }
 
-bot.start(ctx =>
-  ctx.reply(MESSAGES.welcome, buildUpgradeKeyboard())
-);
-bot.command('upgrade', ctx =>
-  ctx.reply('Choose an upgrade:', buildUpgradeKeyboard())
-);
+bot.start(ctx => {
+  ctx.reply(MESSAGES.welcome, buildUpgradeKeyboard());
+});
+
+bot.command('upgrade', ctx => {
+  ctx.reply('Choose an upgrade:', buildUpgradeKeyboard());
+});
 
 bot.on('callback_query', async ctx => {
   const itemId = ctx.callbackQuery.data;
   const item = ITEMS[itemId];
-  if (!item) return ctx.answerCbQuery('Invalid option', { show_alert: true });
+  if (!item) {
+    return ctx.answerCbQuery('Invalid option', { show_alert: true });
+  }
 
   await ctx.answerCbQuery();
   try {
@@ -53,10 +43,10 @@ bot.on('callback_query', async ctx => {
       title: item.name,
       description: item.description,
       payload: itemId,
-      provider_token: PROVIDER_TOKEN,
+      provider_token: '',
       currency: 'XTR',
       prices: [{ label: item.name, amount: item.price }],
-      start_parameter: 'start'
+      start_parameter: 'start',
     });
   } catch (err) {
     console.error('Invoice error:', err);
@@ -64,81 +54,55 @@ bot.on('callback_query', async ctx => {
   }
 });
 
-bot.on('pre_checkout_query', ctx =>
-  ctx.answerPreCheckoutQuery(!!ITEMS[ctx.preCheckoutQuery.invoice_payload])
-);
+bot.on('pre_checkout_query', ctx => {
+  const payload = ctx.preCheckoutQuery.invoice_payload;
+  ctx.answerPreCheckoutQuery(!!ITEMS[payload], ITEMS[payload] ? undefined : 'Invalid payload');
+});
 
 bot.on('successful_payment', async ctx => {
   const payment = ctx.message.successful_payment;
   const itemId = payment.invoice_payload;
   const item = ITEMS[itemId];
-  const userId = String(ctx.from.id);
-  const username = ctx.from.username
-    ? `@${ctx.from.username}`
-    : ctx.from.first_name;
+  const userId = ctx.from.id;
 
-  // ✅ limit is now separate arg
-  let userDoc;
-  try {
-    const found = await databases.listDocuments(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_COLLECTION_ID,
-      [ Query.equal('telegram_id', userId) ],
-      1
-    );
-    if (found.total > 0) {
-      userDoc = found.documents[0];
-    } else {
-      console.warn(`User ${userId} not found`);
-    }
-  } catch (err) {
-    console.error('Appwrite error:', err);
-    return ctx.reply('Database error. Please contact support.');
-  }
+  STATS.purchases[userId] = (STATS.purchases[userId] || 0) + 1;
+  console.log(`Purchase by ${userId}: ${itemId}`);
 
-  if (userDoc) {
-    try {
-      const newPower = (userDoc.mining_power || 1) + item.powerIncrement;
-      await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_ID,
-        userDoc.$id,
-        { mining_power: newPower }
-      );
-    } catch (e) {
-      console.error('Update error:', e);
-    }
-  }
+await ctx.reply(
+  `Purchased successfully!\n\n` +
+  `Your mining will be upgraded according to your purchase permanently.\n` +
+  `If your Mining Power doesn’t update, contact support.`
+);
 
-  await ctx.reply(
-    `🎉 Purchased "${item.name}" successfully!\n` +
-    `Your mining power increased by +${item.powerIncrement}×\n` +
-    `Changes apply within 5 minutes`
-  );
-
+  const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
   for (const adminId of ADMIN_CHAT_IDS) {
     await bot.telegram.sendMessage(
       adminId,
       `*New Purchase*\n` +
-      `User: ${username} (${userId})\n` +
-      `Pack: ${item.name}\n` +
-      `Cost: ${item.price} ⭐️\n` +
-      `Charge ID: ${payment.telegram_payment_charge_id}`,
+      `User: ${username} (\`${userId}\`)\n` +
+      `Pack: *${item.name}*\n` +
+      `Cost: \`${item.price} ⭐️\`\n` +
+      `Charge ID: \`${payment.telegram_payment_charge_id}\``,
       { parse_mode: 'Markdown' }
     );
   }
 });
 
-app.post('/webhook', (req, res) => bot.handleUpdate(req.body, res));
+bot.catch(err => console.error('Bot error', err));
+
+app.post('/webhook', (req, res) => {
+  bot.handleUpdate(req.body, res).catch(console.error);
+});
+
 app.get('/', (req, res) => res.send('OK'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
   try {
     await bot.telegram.setWebhook(`${WEBHOOK_URL}/webhook`);
-    console.log(`Webhook configured: ${WEBHOOK_URL}/webhook`);
-  } catch (e) {
-    console.error('Webhook setup failed:', e);
+    console.log(`Webhook set: ${WEBHOOK_URL}/webhook`);
+  } catch (err) {
+    console.error('Failed to set webhook:', err);
   }
 });
