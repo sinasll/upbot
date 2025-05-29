@@ -77,7 +77,7 @@ bot.on('successful_payment', async ctx => {
   const userId = ctx.from.id;
   const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
 
-  // Fetch user document
+  // Fetch user document (FIXED APPRWRITE CALL)
   let userDoc;
   try {
     const found = await databases.listDocuments(
@@ -94,7 +94,6 @@ bot.on('successful_payment', async ctx => {
     return ctx.reply('Database error. Please contact support.');
   }
 
-  // Update mining power
   if (userDoc) {
     try {
       const newPower = (userDoc.mining_power || 1) + item.powerIncrement;
