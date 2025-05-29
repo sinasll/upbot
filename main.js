@@ -1,4 +1,6 @@
-const express = require('express');
+// bot.js
+require('dotenv').config();
+const express   = require('express');
 const { Telegraf, Markup } = require('telegraf');
 const { Client, Databases, Query } = require('node-appwrite');
 const {
@@ -11,19 +13,22 @@ const {
   APPWRITE_PROJECT_ID,
   APPWRITE_API_KEY,
   APPWRITE_DATABASE_ID,
-  APPWRITE_COLLECTION_ID
+  APPWRITE_COLLECTION_ID,
 } = require('./config');
 
-const bot = new Telegraf(BOT_TOKEN);
 const app = express();
 app.use(express.json());
 
-// Initialize Appwrite client
+const bot = new Telegraf(BOT_TOKEN);
+
+// Re‑introduce STATS so we can track purchases without crashing
+const STATS = { purchases: {} };
+
+// Initialize Appwrite client + Databases
 const awClient = new Client()
   .setEndpoint(APPWRITE_ENDPOINT)
   .setProject(APPWRITE_PROJECT_ID)
   .setKey(APPWRITE_API_KEY);
-
 const databases = new Databases(awClient);
 
 // Build the inline keyboard for upgrades
@@ -45,21 +50,19 @@ bot.command('upgrade', ctx => {
 
 bot.on('callback_query', async ctx => {
   const itemId = ctx.callbackQuery.data;
-  const item = ITEMS[itemId];
-  if (!item) {
-    return ctx.answerCbQuery('Invalid option', { show_alert: true });
-  }
+  const item   = ITEMS[itemId];
+  if (!item) return ctx.answerCbQuery('Invalid option', { show_alert: true });
 
   await ctx.answerCbQuery();
   try {
     await ctx.replyWithInvoice({
-      chat_id: ctx.chat.id,
-      title: item.name,
-      description: item.description,
-      payload: itemId,
+      chat_id:       ctx.chat.id,
+      title:         item.name,
+      description:   item.description,
+      payload:       itemId,
       provider_token: '',
-      currency: 'XTR',
-      prices: [{ label: item.name, amount: item.price }],
+      currency:      'XTR',
+      prices:        [{ label: item.name, amount: item.price }],
       start_parameter: 'start',
     });
   } catch (err) {
@@ -70,45 +73,56 @@ bot.on('callback_query', async ctx => {
 
 bot.on('pre_checkout_query', ctx => {
   const payload = ctx.preCheckoutQuery.invoice_payload;
-  ctx.answerPreCheckoutQuery(!!ITEMS[payload], ITEMS[payload] ? undefined : 'Invalid payload');
+  ctx.answerPreCheckoutQuery(
+    !!ITEMS[payload],
+    ITEMS[payload] ? undefined : 'Invalid payload'
+  );
 });
 
 bot.on('successful_payment', async ctx => {
   const payment = ctx.message.successful_payment;
-  const itemId = payment.invoice_payload;
-  const item = ITEMS[itemId];
-  const userId = ctx.from.id;
+  const itemId  = payment.invoice_payload;
+  const item    = ITEMS[itemId];
+  const userId  = ctx.from.id;
   const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
 
-  // 1) Update mining_power in Appwrite
+  // 1) Fetch the user document by telegram_id (limit=1)
+  let userDoc;
   try {
-    // Find the user document by telegram_id
     const found = await databases.listDocuments(
       APPWRITE_DATABASE_ID,
       APPWRITE_COLLECTION_ID,
       [
-        Query.equal('telegram_id', String(userId)),
-        Query.limit(1)
-      ]
+        Query.equal('telegram_id', String(userId))
+      ],
+      1 // <-- limit here, not inside the queries array
     );
 
-    if (found.total > 0) {
-      const userDoc = found.documents[0];
-      const newPower = (userDoc.mining_power || 1) + item.powerIncrement;
+    if (found.total === 0) {
+      console.warn(`User ${userId} not found in DB`);
+    } else {
+      userDoc = found.documents[0];
+    }
+  } catch (err) {
+    console.error('Appwrite listDocuments error:', err);
+  }
 
+  // 2) If we got the user, update their mining_power
+  if (userDoc) {
+    try {
+      const newPower = (userDoc.mining_power || 1) + item.powerIncrement;
       await databases.updateDocument(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_ID,
         userDoc.$id,
         { mining_power: newPower }
       );
+    } catch (err) {
+      console.error('Appwrite updateDocument error:', err);
     }
-  } catch (err) {
-    console.error('Appwrite update error:', err);
-    // (Optional) notify the user/admin of a sync failure
   }
 
-  // 2) Acknowledge the user
+  // 3) Track purchase & notify user
   STATS.purchases[userId] = (STATS.purchases[userId] || 0) + 1;
   await ctx.reply(
     `🎉 Purchased "${item.name}" successfully!\n\n` +
@@ -116,7 +130,7 @@ bot.on('successful_payment', async ctx => {
     `If you don’t see the change in-game within a few minutes, please contact support.`
   );
 
-  // 3) Notify admins
+  // 4) Notify admins
   for (const adminId of ADMIN_CHAT_IDS) {
     await bot.telegram.sendMessage(
       adminId,
