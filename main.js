@@ -71,7 +71,7 @@ bot.on('successful_payment', async ctx => {
 await ctx.reply(
   `Purchase successful!\n\n` +
   `Your mining power will be increased accordingly and permanently. ` +
-  `If it doesn’t update within 1 hour, please contact support at @sinasll for a full refund and a free upgrade based on your purchase.`
+  `If it doesn’t update within 4 hours, please contact support at @theblacksupportbot for a full refund and a free upgrade based on your purchase.`
 );
 
   const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
