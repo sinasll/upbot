@@ -15,9 +15,11 @@ module.exports = {
 
 Get a permanent boost using Telegram stars ⭐️ and mine more $BLACK.
 
-• Maximum Mining Power: 10×  
-• Special Offer: 50% off all upgrades!  
-• Spend over 200 ⭐️ and receive a **Bonus Boost** of permanent +0.5× Mining Power.
+• Maximum Mining Power 10× 
+ 
+• 50% off all upgrades! 
+
+• Spend over 200 ⭐️ receive a Bonus Boost of permanent +0.5× Mining Power.
 
 Choose an upgrade:`
   },
