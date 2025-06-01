@@ -1,3 +1,4 @@
+
 require('dotenv').config();
 
 module.exports = {
@@ -11,17 +12,7 @@ module.exports = {
     ultimate: { name: '+1.0× Mining Power — 200 ⭐️', price: 200, description: 'Upgrade your mining power by +1.0×' }
   },
   MESSAGES: {
-    welcome: `Welcome to the $BLACK Upgrade Center
-
-Get a permanent boost using Telegram stars ⭐️ and mine more $BLACK.
-
-• Maximum Mining Power 10× 
- 
-• 50% off all upgrades! 
-
-• Spend over 200 ⭐️ receive a Bonus Boost of permanent +0.5× Mining Power.
-
-Choose an upgrade:`
+    welcome: `Welcome to the $BLACK Upgrade Center\n\nGet a permanent boost using\nTelegram stars ⭐️ and mine more $BLACK.\n\nChoose an upgrade`
   },
   ADMIN_CHAT_IDS: process.env.ADMIN_CHAT_IDS?.split(',').map(id => parseInt(id, 10)) || [],
   APPWRITE_ENDPOINT: process.env.APPWRITE_ENDPOINT,
