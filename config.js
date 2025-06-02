@@ -4,14 +4,20 @@ module.exports = {
   BOT_TOKEN: process.env.BOT_TOKEN,
   WEBHOOK_URL: process.env.WEBHOOK_URL,
   ITEMS: {
-    basic: { name: '+0.2× Mining Power — before 40⭐️ - now 20⭐️', price: 20, description: 'Upgrade your mining power by +0.2×' },
-    advanced: { name: '+0.4× Mining Power — before 80⭐️- now 40⭐️', price: 40, description: 'Upgrade your mining power by +0.4×' },
-    recommended: { name: '+0.6× Mining Power — before 120⭐️ - now 60⭐️', price: 60, description: 'Upgrade your mining power by +0.6×' },
-    ultra: { name: '+0.8× Mining Power — before 160⭐️ - now 80⭐️', price: 80, description: 'Upgrade your mining power by +0.8×' },
-    ultimate: { name: '+1.0× Mining Power — before 200⭐️ - now 100⭐️', price: 100, description: 'Upgrade your mining power by +1.0×' }
+    basic: { name: '+0.2× Mining Power — 20⭐️', price: 20, description: 'Upgrade your mining power by +0.2×' },
+    advanced: { name: '+0.4× Mining Power — 40⭐️', price: 40, description: 'Upgrade your mining power by +0.4×' },
+    recommended: { name: '+0.6× Mining Power — 60⭐️', price: 60, description: 'Upgrade your mining power by +0.6×' },
+    ultra: { name: '+0.8× Mining Power — 80⭐️', price: 80, description: 'Upgrade your mining power by +0.8×' },
+    ultimate: { name: '+1.0× Mining Power — 100⭐️', price: 100, description: 'Upgrade your mining power by +1.0×' }
   },
   MESSAGES: {
     welcome: `Welcome to the $BLACK Upgrade Center
+
+    before 40⭐️ - now 20⭐️
+    before 80⭐️- now 40⭐️
+    before 120⭐️ - now 60⭐️
+    before 160⭐️ - now 80⭐️
+    before 200⭐️ - now 100⭐️
 
 Get a permanent boost using Telegram stars ⭐️ and mine more $BLACK.
 
