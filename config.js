@@ -4,7 +4,7 @@ module.exports = {
   BOT_TOKEN: process.env.BOT_TOKEN,
   WEBHOOK_URL: process.env.WEBHOOK_URL,
   ITEMS: {
-    basic: { name: '+0.2× Mining Power — 20', price: 20, description: 'Upgrade your mining power by +0.2×' },
+    basic: { name: '+0.2× Mining Power — 20⭐️', price: 20, description: 'Upgrade your mining power by +0.2×' },
     advanced: { name: '+0.4× Mining Power — 40⭐️', price: 40, description: 'Upgrade your mining power by +0.4×' },
     recommended: { name: '+0.6× Mining Power — 60⭐️', price: 60, description: 'Upgrade your mining power by +0.6×' },
     ultra: { name: '+0.8× Mining Power — 80⭐️', price: 80, description: 'Upgrade your mining power by +0.8×' },
@@ -15,11 +15,11 @@ module.exports = {
 
 Get a permanent boost using Telegram stars ⭐️ and mine more $BLACK.
 
-- Maximum Mining Power 10× 
+• Maximum Mining Power 10× 
  
-- 50% off all upgrades! 
+• 50% off all upgrades! 
 
-- Spend over 200 ⭐️ receive a Bonus Boost of permanent +0.5× Mining Power.
+• Spend over 200 ⭐️ receive a Bonus Boost of permanent +0.5× Mining Power.
 
 Choose an upgrade:`
   },
