@@ -43,7 +43,7 @@ bot.on('callback_query', async ctx => {
       title: item.name,
       description: item.description,
       payload: itemId,
-      provider_token: '',
+      provider_token: PROVIDER_TOKEN,
       currency: 'XTR',
       prices: [{ label: item.name, amount: item.price }],
       start_parameter: 'start',
@@ -56,7 +56,10 @@ bot.on('callback_query', async ctx => {
 
 bot.on('pre_checkout_query', ctx => {
   const payload = ctx.preCheckoutQuery.invoice_payload;
-  ctx.answerPreCheckoutQuery(!!ITEMS[payload], ITEMS[payload] ? undefined : 'Invalid payload');
+  ctx.answerPreCheckoutQuery(
+    !!ITEMS[payload],
+    ITEMS[payload] ? undefined : 'Invalid payload'
+  );
 });
 
 bot.on('successful_payment', async ctx => {
@@ -68,23 +71,23 @@ bot.on('successful_payment', async ctx => {
   STATS.purchases[userId] = (STATS.purchases[userId] || 0) + 1;
   console.log(`Purchase by ${userId}: ${itemId}`);
 
-await ctx.reply(
-  `Purchase successful!\n\n` +
-  `Your mining power will be increased accordingly and permanently. ` +
-  `If it doesn’t update within 4 hours, please contact support at @theblacksupportbot for a full refund and a free upgrade based on your purchase.`
-);
+  await ctx.reply(
+    `Purchase successful!\n\n` +
+    `Your mining power will be increased accordingly and permanently. ` +
+    `If it doesn’t update within 4 hours, please contact support at @theblacksupportbot for a full refund and a free upgrade based on your purchase.`
+  );
 
   const username = ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name;
   for (const adminId of ADMIN_CHAT_IDS) {
-    await bot.telegram.sendMessage(
-      adminId,
-      `*New Purchase*\n` +
-      `User: ${username} (\`${userId}\`)\n` +
-      `Pack: *${item.name}*\n` +
-      `Cost: \`${item.price}\`\n` +
-      `Charge ID: \`${payment.telegram_payment_charge_id}\``,
-      { parse_mode: 'Markdown' }
-    );
+    // Send plain‐text (no Markdown/HTML) to avoid parse errors
+    const adminMsg =
+      'New Purchase\n' +
+      `User: ${username} (${userId})\n` +
+      `Pack: ${item.name}\n` +
+      `Cost: ${item.price}\n` +
+      `Charge ID: ${payment.telegram_payment_charge_id}`;
+
+    await bot.telegram.sendMessage(adminId, adminMsg);
   }
 });
 
